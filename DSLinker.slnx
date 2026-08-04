@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="DSLinker.vcxproj" />
+  <Project Path="DSLinker.vcxproj" Id="d8a87149-c6f1-4928-a9f7-06bdd94b854d" />
 </Solution>
