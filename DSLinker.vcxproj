@@ -20,8 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ccarar.cpp" />
+    <ClCompile Include="src\dslinker.cpp" />
     <ClCompile Include="src\toolset.cpp" />
     <ClCompile Include="test\test01_CRB_io_test.cpp" />
+    <ClCompile Include="test\test02_chat_connnet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dslinker.h" />
@@ -124,7 +126,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CPPHTTPLIB_OPENSSL_SUPPORT</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -144,7 +146,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CPPHTTPLIB_OPENSSL_SUPPORT</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

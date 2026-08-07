@@ -2,10 +2,13 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 #include <optional>
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 #include <memory>
+#include <httplib.h>
+#include <mutex>
 
 namespace dslinker {
 	/*-----------------------------------------------------------------
@@ -50,6 +53,7 @@ namespace dslinker {
 		std::vector<Function> functions;
 		std::unordered_map<std::string, ToolCallBack> toolset;
 	};
+
 
 	/*-----------------------------------------------------------------
 	* 
@@ -173,5 +177,97 @@ namespace dslinker {
 	};
 
 	// 转写 ChatRequest 为 JsonString
-	std::string packChatRequest(ChatRequestBody request_body);
+	nlohmann::json packChatRequest(ChatRequestBody request_body);
+
+
+	/*-----------------------------------------------------------------
+	*
+	* Chat Completions API 响应
+	*
+	-----------------------------------------------------------------*/
+
+
+	/*-----------------------------------------------------------------
+	*
+	* DSLinkerClient 封装
+	*
+	-----------------------------------------------------------------*/
+
+	// statu 为错误码。
+	// 当值为 -4 时，代表 Json 解析错误，thought 包含具体错误信息，answer 包含原始响应体
+	// 当值为 -3 时，代表请求直接被手动中断（DSLinker 析构或用户手动 stop）
+	// 当值为 -2 时，代表连接不上服务器，没有任何附加错误信息。
+	// 当值为 -1 时，answer 会包含服务器发来的原始错误信息，error 会包含服务器发来的状态码，而 thought 会包含错误码原因（在 API 文档中写明的）。
+	// 当值为 1 时，就说明正在正常返回内容（流式）。
+	// 当值为 2 时，就说明还没有新内容增量（流式）
+	// 当值为 3 时，就说明调用了工具，answer 会包含整个 tool_calls 的原始 json
+	// 当值为 0 时，代表正常返回且结束。如果是流式，则 answer 必定为 [DONE]，不含增量。
+	struct ModelAnswer {
+		int statu;
+		int error;
+		std::string thought;
+		std::string answer;
+	};
+
+	// 联系到 DeepSeek API 服务器的智能客户端，一次只支持进行一个请求。如果需要多请求并发，请新开一个客户端
+	class DSLinker {
+	public:
+		DSLinker(std::string apikey);
+		~DSLinker();
+
+		/*---------------------------------
+		* Chat 模块
+		---------------------------------*/
+
+		// 以非流式传入请求体 json，返回 false 代表当前已有请求正在处理。输出的内容可以用 popWords 函数获取
+		bool requestChatNoStream(nlohmann::json jsonRequest);
+		
+		// 以流式传入请求体 json，返回 false 代表当前已有请求正在处理。输出的纯文字增量组可以用 popWords 函数逐个获取
+		bool requestChatStream(nlohmann::json jsonRequest);
+		// 获取回复增量
+		ModelAnswer popWords(void);
+
+		// 获取当前模型工作状态，若工作正在进行，则返回 true
+		bool hasProccess(void);
+		// 获取增量组是否有未处理的新增量，若还有新增量，则返回 true
+		bool hasWords(void);
+		// 获取 Json 组是否有未处理的 Json，若还有 Json，则返回 true
+		bool hasJsons(void);
+
+		// 获取最后一次请求的原始 json。若是非流式则只有一个；若是流式则是若干个，需要多次调用该函数获取。当返回空字符串时代表本轮 json 已输出完毕。
+		nlohmann::json popResponseJsons(void);
+
+		// 等待请求结束（阻塞）
+		bool waitRequest(void);
+		// 强制停止请求
+		void stopRequest(void);
+	private:
+		std::string apikey_;
+		const std::string base_url_ = "https://api.deepseek.com";
+		const std::string chat_path_ = "/chat/completions";
+
+		const std::string embed_path_ = "/v1/embeddings";
+
+		httplib::Client client_;
+
+		void clearQueues(void);
+		void pushWords(int, int, std::string, std::string);
+		void pushJson(nlohmann::json);
+		std::mutex mtxStream_;
+		std::queue<nlohmann::json> Jsons_;
+		std::queue<ModelAnswer> wordStream_;
+
+		void openAlive(void);
+		void closeAlive(void);
+		std::mutex mtxAlive_;
+		bool alive_;
+
+		void setStop(void);
+		void resetStop(void);
+		bool orderStop(void);
+		std::mutex mtxStop_;
+		bool stop_;
+
+		std::thread* threadRequest;
+	};
 }

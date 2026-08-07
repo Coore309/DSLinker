@@ -2,7 +2,7 @@
 #include <cmath>
 
 namespace dslinker{
-	std::string packChatRequest(ChatRequestBody rb) {
+	nlohmann::json packChatRequest(ChatRequestBody rb) {
 		nlohmann::json jRequest;
 
 		// messages 装填
@@ -118,6 +118,6 @@ namespace dslinker{
 
 		if (rb.user_id.has_value()) jRequest["user_id"] = rb.user_id.value();
 
-		return jRequest.dump();
+		return jRequest;
 	}
 }
