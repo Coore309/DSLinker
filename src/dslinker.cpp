@@ -7,6 +7,11 @@ namespace dslinker {
 		client_.set_read_timeout(660);
 	}
 
+	DSLinker::DSLinker(std::string apikey, bool beta) : apikey_(apikey), client_(beta ? beta_url_ : base_url_), alive_(false), stop_(false), threadRequest(nullptr) {
+		client_.set_bearer_token_auth(apikey_);
+		client_.set_read_timeout(660);
+	}
+
 	DSLinker::~DSLinker() {
 		stopRequest();
 	}
@@ -20,13 +25,13 @@ namespace dslinker {
 		threadRequest = new std::thread([this](nlohmann::json jsonRequest) {
 			auto res = client_.Post(chat_path_, jsonRequest.dump(), "application/json");
 			if (orderStop()) {
-				pushWords(-3, 0, "", "");
+				pushWords(-3, "", "", "");
 				closeAlive();
 				return;
 			}
 
 			if (!res) {
-				pushWords(-2, 0, "", "");
+				pushWords(-2, "", "", "");
 				closeAlive();
 				return;
 			}
@@ -60,7 +65,7 @@ namespace dslinker {
 					break;
 				}
 
-				pushWords(-1, res->status, error_message, res->body);
+				pushWords(-1, std::to_string(res->status), error_message, res->body);
 				closeAlive();
 				return;
 			}
@@ -69,10 +74,10 @@ namespace dslinker {
 				nlohmann::json jsonResponse = nlohmann::json::parse(res->body);
 				pushJson(jsonResponse);
 				auto& message = jsonResponse["choices"][0]["message"];
-				pushWords(0, 0, message["reasoning_content"].is_null() ? "" : message["reasoning_content"], message["content"].is_null() ? "" : message["content"]);
+				pushWords(0, "", message["reasoning_content"].is_null() ? "" : message["reasoning_content"], message["content"].is_null() ? "" : message["content"]);
 			}
 			catch (nlohmann::json::parse_error& e) {
-				pushWords(-4, 0, std::string("Json parse 发生错误：") + e.what(), res->body);
+				pushWords(-4, "", std::string("Json parse 发生错误：") + e.what(), res->body);
 			}
 
 			closeAlive();
@@ -114,7 +119,6 @@ namespace dslinker {
 					std::string dataContent = line.substr(prefix.length());
 
 					if (dataContent == "[DONE]") {
-						pushWords(0, 0, "", "[DONE]");
 						return false;
 					}
 
@@ -123,11 +127,11 @@ namespace dslinker {
 						pushJson(jsonResponse);
 						if (jsonResponse["choices"][0]["finish_reason"].is_null()) {
 							auto& delta = jsonResponse["choices"][0]["delta"];
-							pushWords(1, 0, delta["reasoning_content"].is_null() ? "" : delta["reasoning_content"], delta["content"].is_null() ? "" : delta["content"]);
+							pushWords(1, "", delta["reasoning_content"].is_null() ? "" : delta["reasoning_content"], delta["content"].is_null() ? "" : delta["content"]);
 						}
 					}
 					catch (nlohmann::json::parse_error& e) {
-						pushWords(-4, 0, std::string("Json parse 发生错误：") + e.what(), dataContent);
+						pushWords(-4, "", std::string("Json parse 发生错误：") + e.what(), dataContent);
 						return false;
 					}
 				}
@@ -135,8 +139,14 @@ namespace dslinker {
 				return true;
 			});
 
+			if (orderStop()) {
+				pushWords(-3, "", "", "");
+				closeAlive();
+				return;
+			}
+
 			if (!res) {
-				pushWords(-2, 0, "", "");
+				pushWords(-2, "", "", "");
 				closeAlive();
 				return;
 			}
@@ -170,13 +180,7 @@ namespace dslinker {
 					break;
 				}
 
-				pushWords(-1, res->status, error_message, res->body);
-				closeAlive();
-				return;
-			}
-
-			if (orderStop()) {
-				pushWords(-3, 0, "", "");
+				pushWords(-1, std::to_string(res->status), error_message, res->body);
 				closeAlive();
 				return;
 			}
@@ -191,7 +195,7 @@ namespace dslinker {
 	// 获取回复增量
 	ModelAnswer DSLinker::popWords(void) {
 		std::lock_guard<std::mutex> lockStream(mtxStream_);
-		if (wordStream_.empty()) return { 2,0,"","" };
+		if (wordStream_.empty()) return { 2,"","",""};
 		
 		ModelAnswer deltaMsg = wordStream_.front();
 		wordStream_.pop();
@@ -233,9 +237,9 @@ namespace dslinker {
 		wordStream_ = {};
 	}
 
-	void DSLinker::pushWords(int statu, int error, std::string thought, std::string answer) {
+	void DSLinker::pushWords(int statu, std::string id, std::string thought, std::string answer) {
 		std::lock_guard<std::mutex> lockStream(mtxStream_);
-		wordStream_.push({ statu, error, thought, answer });
+		wordStream_.push({ statu, id, thought, answer });
 	}
 
 	void DSLinker::pushJson(nlohmann::json jR) {

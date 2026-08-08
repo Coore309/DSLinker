@@ -33,6 +33,12 @@
     <ClCompile Include="test\test02_chat_connnet.cpp">
       <Filter>源文件\test</Filter>
     </ClCompile>
+    <ClCompile Include="test\test03_all_test.cpp">
+      <Filter>源文件\test</Filter>
+    </ClCompile>
+    <ClCompile Include="test\free_test.cpp">
+      <Filter>源文件\test</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dslinker.h">

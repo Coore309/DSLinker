@@ -29,29 +29,17 @@ namespace dslinker {
 		std::optional<bool> strict = std::nullopt;
 	};
 
-	/*
-	回调函数原型：
-	void* (*callback)(const std::string& jrpParam, std::string& outResult);
-	jrpParam 为json格式字符串，请自行按照自己在 param 约定的参数处理。
-	outResult 为输出结果，用于接受回调函数运算结果
-	返回值 void* 作为调用者可获取并且完全自定义的上下文，用于保存中间结果、记录错误信息。请自行在回调函数内与调用逻辑内对返回值进行解析、内存管理，toolset 以及其他更高层的库都只负责传递该返回值。
-	*/
-	using ToolCallBack = void* (*)(const std::string& jrpParam, std::string& outResult);
-
 	// 工具集
 	class ToolSet {
 	public:
 		// 添加工具到工具集，并且绑定对应的回调函数。请调用addTool(funcDef, std::make_unique<IToolCallBack子类>(构造参数))，将指针所有权交给 ToolSet 管理
-		void addTool(Function fcTool, ToolCallBack);
+		void addTool(Function fcTool);
 		// 从工具集删除工具，并且解绑对应的回调函数, name 为 Function 中的 name 成员变量
 		void removeTool(std::string name);
 		// 获取 json 格式的工具列表
 		nlohmann::json getToolsList(void);
-		// 从工具集中以 name 获取工具回调 Functor
-		ToolCallBack getResponse(std::string name);
 	private:
 		std::vector<Function> functions;
-		std::unordered_map<std::string, ToolCallBack> toolset;
 	};
 
 
@@ -182,13 +170,6 @@ namespace dslinker {
 
 	/*-----------------------------------------------------------------
 	*
-	* Chat Completions API 响应
-	*
-	-----------------------------------------------------------------*/
-
-
-	/*-----------------------------------------------------------------
-	*
 	* DSLinkerClient 封装
 	*
 	-----------------------------------------------------------------*/
@@ -197,22 +178,28 @@ namespace dslinker {
 	// 当值为 -4 时，代表 Json 解析错误，thought 包含具体错误信息，answer 包含原始响应体
 	// 当值为 -3 时，代表请求直接被手动中断（DSLinker 析构或用户手动 stop）
 	// 当值为 -2 时，代表连接不上服务器，没有任何附加错误信息。
-	// 当值为 -1 时，answer 会包含服务器发来的原始错误信息，error 会包含服务器发来的状态码，而 thought 会包含错误码原因（在 API 文档中写明的）。
+	// 当值为 -1 时，answer 会包含服务器发来的原始错误信息，id 会包含服务器发来的状态码，而 thought 会包含错误码原因（在 API 文档中写明的）。
 	// 当值为 1 时，就说明正在正常返回内容（流式）。
 	// 当值为 2 时，就说明还没有新内容增量（流式）
-	// 当值为 3 时，就说明调用了工具，answer 会包含整个 tool_calls 的原始 json
-	// 当值为 0 时，代表正常返回且结束。如果是流式，则 answer 必定为 [DONE]，不含增量。
+	// 当值为 0 时，代表正常返回且结束。如果是流式，则不会返回该值，请使用 hasProcess 判断流是否结束，若 popWords 得到了带负值 status 的 ModelAnswer，代表流出错。
 	struct ModelAnswer {
 		int statu;
-		int error;
+		std::string id;
 		std::string thought;
 		std::string answer;
 	};
+
+	/*
+	* 未支持工具回调，若要处理工具回调请自行从 json 原型中提取相关字段。
+	* Beta 功能概率失败
+	*/
 
 	// 联系到 DeepSeek API 服务器的智能客户端，一次只支持进行一个请求。如果需要多请求并发，请新开一个客户端
 	class DSLinker {
 	public:
 		DSLinker(std::string apikey);
+		// 当 beta 为 true 时，默认使用 DeepSeek API 的 Beta 功能
+		DSLinker(std::string apikey, bool beta);
 		~DSLinker();
 
 		/*---------------------------------
@@ -241,9 +228,12 @@ namespace dslinker {
 		bool waitRequest(void);
 		// 强制停止请求
 		void stopRequest(void);
+
+		
 	private:
 		std::string apikey_;
 		const std::string base_url_ = "https://api.deepseek.com";
+		const std::string beta_url_ = "https://api.deepseek.com/beta";
 		const std::string chat_path_ = "/chat/completions";
 
 		const std::string embed_path_ = "/v1/embeddings";
@@ -251,7 +241,7 @@ namespace dslinker {
 		httplib::Client client_;
 
 		void clearQueues(void);
-		void pushWords(int, int, std::string, std::string);
+		void pushWords(int, std::string, std::string, std::string);
 		void pushJson(nlohmann::json);
 		std::mutex mtxStream_;
 		std::queue<nlohmann::json> Jsons_;

@@ -22,8 +22,10 @@
     <ClCompile Include="src\ccarar.cpp" />
     <ClCompile Include="src\dslinker.cpp" />
     <ClCompile Include="src\toolset.cpp" />
+    <ClCompile Include="test\free_test.cpp" />
     <ClCompile Include="test\test01_CRB_io_test.cpp" />
     <ClCompile Include="test\test02_chat_connnet.cpp" />
+    <ClCompile Include="test\test03_all_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dslinker.h" />
@@ -50,13 +52,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -81,11 +83,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)test\</OutDir>
+    <OutDir>$(SolutionDir)lib\</OutDir>
     <IntDir>obj\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)test\</OutDir>
+    <OutDir>$(SolutionDir)lib\</OutDir>
     <IntDir>obj\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
