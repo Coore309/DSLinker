@@ -22,10 +22,6 @@
     <ClCompile Include="src\ccarar.cpp" />
     <ClCompile Include="src\dslinker.cpp" />
     <ClCompile Include="src\toolset.cpp" />
-    <ClCompile Include="test\free_test.cpp" />
-    <ClCompile Include="test\test01_CRB_io_test.cpp" />
-    <ClCompile Include="test\test02_chat_connnet.cpp" />
-    <ClCompile Include="test\test03_all_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dslinker.h" />
@@ -83,11 +79,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)lib\</OutDir>
+    <OutDir>$(ProjectDir)lib\</OutDir>
     <IntDir>obj\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)lib\</OutDir>
+    <OutDir>$(ProjectDir)lib\</OutDir>
     <IntDir>obj\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
